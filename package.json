@@ -1,0 +1,32 @@
+{
+  "name": "openclaw-raw-memory",
+  "version": "1.0.0",
+  "description": "OpenClaw 原始记忆库系统 - 自动备份 + 检索工具",
+  "author": "Loli",
+  "license": "MIT",
+  "keywords": [
+    "openclaw",
+    "memory",
+    "backup",
+    "search",
+    "raw-memory"
+  ],
+  "openclaw": {
+    "hooks": {
+      "raw-backup": {
+        "description": "自动备份所有 agent 的原始对话到 markdown 文件",
+        "events": ["gateway:startup", "gateway:shutdown"]
+      }
+    },
+    "skills": {
+      "raw-memory-search": {
+        "description": "搜索原始对话记忆，当发现记忆缺失时使用"
+      }
+    }
+  },
+  "files": [
+    "hook/",
+    "skill/",
+    "README.md"
+  ]
+}
