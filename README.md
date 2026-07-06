@@ -2,6 +2,122 @@
 
 OpenClaw 原始记忆库系统 - 自动备份 + 检索工具
 
+---
+
+# English
+
+## Features
+
+- **Auto Backup**: Automatically backup all agent conversations when Gateway starts
+- **Daily Storage**: One markdown file per day, human-readable
+- **Search Tool**: Agents can search raw conversations when memory is missing
+- **Zero Token Cost**: Backup process never calls LLM
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+
+## Components
+
+| Component | Type | Function |
+|-----------|------|----------|
+| `hook/` | Hook Pack | Auto backup raw conversations |
+| `skill/` | Skill | Search raw conversation memory |
+
+## Installation
+
+### Install Hook (Auto Backup)
+
+```bash
+# From local
+openclaw plugins install ./openclaw-raw-memory
+
+# From GitHub
+openclaw plugins install https://github.com/oceanwh/openclaw-memory-system
+```
+
+### Install Skill (Search Tool)
+
+```bash
+# From local
+openclaw skills install ./openclaw-raw-memory/skill
+
+# From GitHub
+openclaw skills install https://github.com/oceanwh/openclaw-memory-system/skill
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `RAW_MEMORY_BACKUP_PATH` | Backup file storage path | `~/.openclaw/raw-memory-backup` |
+| `RAW_MEMORY_POLL_INTERVAL` | Poll interval (ms) | `600000` (10 minutes) |
+| `OPENCLAW_WORKSPACE_BASE` | OpenClaw workspace root | `~/.openclaw` |
+| `OPENCLAW_AGENTS_DIR` | Agents directory path | `~/.openclaw/agents` |
+| `AGENT_WORKSPACES` | Agent workspace mapping | Auto-detect |
+
+### Configure in openclaw.json
+
+```json
+{
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "raw-backup": {
+          "enabled": true,
+          "config": {
+            "RAW_MEMORY_BACKUP_PATH": "/path/to/backup",
+            "RAW_MEMORY_POLL_INTERVAL": 600000
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## Usage
+
+### Auto Backup
+
+After installation, the backup daemon starts automatically when Gateway starts:
+- Polls all agent JSONL files every 10 minutes
+- Appends new content to daily markdown files
+- Stops automatically when Gateway shuts down
+
+### Search Tool
+
+When an agent discovers missing memory, execute:
+
+```bash
+node raw-tools.js search --agent <agentId> --query "keyword" --limit 3
+```
+
+Returns: **3 sentences before + target sentence + 3 sentences after = 7 sentences of context**
+
+## Backup Directory Structure
+
+```
+<backupPath>/
+├── loli/
+│   ├── 2026-07-06.md
+│   └── ...
+├── main/
+│   ├── 2026-07-06.md
+│   └── ...
+├── miya/
+├── yuki/
+└── lisa/
+```
+
+## License
+
+MIT License
+
+---
+
+# 中文
+
 ## 功能
 
 - **自动备份**：Gateway 启动时自动备份所有 agent 的原始对话
@@ -25,8 +141,8 @@ OpenClaw 原始记忆库系统 - 自动备份 + 检索工具
 # 从本地安装
 openclaw plugins install ./openclaw-raw-memory
 
-# 或从 npm 安装（如果发布）
-openclaw plugins install openclaw-raw-memory
+# 从 GitHub 安装
+openclaw plugins install https://github.com/oceanwh/openclaw-memory-system
 ```
 
 ### 安装 Skill（检索工具）
@@ -35,8 +151,8 @@ openclaw plugins install openclaw-raw-memory
 # 从本地安装
 openclaw skills install ./openclaw-raw-memory/skill
 
-# 或从 npm 安装（如果发布）
-openclaw skills install openclaw-raw-memory-search
+# 从 GitHub 安装
+openclaw skills install https://github.com/oceanwh/openclaw-memory-system/skill
 ```
 
 ## 配置
@@ -106,28 +222,6 @@ node raw-tools.js search --agent <agentId> --query "关键词" --limit 3
 └── lisa/
 ```
 
-## 文件说明
-
-### Hook 文件
-
-- `HOOK.md` - Hook 元数据
-- `handler.ts` - Gateway 启停逻辑
-- `watcher.js` - 备份守护进程
-
-### Skill 文件
-
-- `SKILL.md` - 工具说明（agent 读取后知道怎么用）
-- `raw-tools.js` - 检索脚本
-
-## 依赖
-
-- Node.js（内置，无需额外安装）
-- OpenClaw Gateway
-
 ## 许可证
 
 MIT License
-
-## 作者
-
-Loli（专属代码工程师）
