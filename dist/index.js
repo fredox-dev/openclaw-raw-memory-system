@@ -14,11 +14,11 @@ const fs = require('fs');
 let backupProcess = null;
 
 function getWatcherPath(pluginDir) {
-  // Try src/ relative to plugin directory
-  const localWatcher = path.join(pluginDir, 'src', 'watcher.js');
-  if (fs.existsSync(localWatcher)) return localWatcher;
+  // Try src/ as sibling of dist/ (plugin root is parent of dist/)
+  const srcWatcher = path.join(pluginDir, '..', 'src', 'watcher.js');
+  if (fs.existsSync(srcWatcher)) return srcWatcher;
 
-  // Fallback: dist/ directory
+  // Fallback: watcher.js inside dist/ (bundled)
   const distWatcher = path.join(pluginDir, 'watcher.js');
   if (fs.existsSync(distWatcher)) return distWatcher;
 
