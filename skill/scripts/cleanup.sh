@@ -81,9 +81,9 @@ for md_file in "$AGENT_BACKUP_DIR"/*.md; do
       rm "$md_file"
       echo "  Deleted: $filename.md (${size} bytes)"
     fi
-    ((DELETED++))
+    DELETED=$((DELETED + 1))
   else
-    ((KEPT++))
+    KEPT=$((KEPT + 1))
   fi
 done
 
