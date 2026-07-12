@@ -26,7 +26,7 @@ OpenClaw's built-in memory system is great — it compresses conversations into 
 OpenClaw Raw Memory System hooks into the Gateway and automatically backs up every agent conversation to human-readable Markdown files — **with zero token cost**.
 
 ```
-Agent talks → Gateway writes JSONL → This hook reads JSONL → Daily .md files
+Agent talks → Gateway writes JSONL → This plugin reads JSONL → Daily .md files
                                                                     ↓
                                                             Searchable by agents
 ```
@@ -41,26 +41,49 @@ Agent talks → Gateway writes JSONL → This hook reads JSONL → Daily .md fil
 | 💰 **Zero Token Cost** | Backup process never calls an LLM — pure file I/O |
 | 🌍 **Cross-Platform** | Windows, macOS, Linux |
 | 📖 **Human-Readable** | Open any file in any text editor — no binary databases |
+| ⚙️ **Zero Config** | Auto-detects timezone, agent names from `openclaw.json` |
 
 ---
 
 ## Quick Start
 
-### 1. Install the Hook (Auto Backup)
+### 1. Install the Plugin
 
 ```bash
-openclaw plugins install https://github.com/oceanwh/openclaw-memory-system
+openclaw plugins install git:github.com/xylem-team/openclaw-raw-memory-system
 ```
 
-### 2. Install the Skill (Search Tool)
+### 2. Enable and Restart
 
 ```bash
-openclaw skills install https://github.com/oceanwh/openclaw-memory-system/skill
+openclaw plugins enable openclaw-memory-system
+openclaw gateway restart
 ```
 
-### 3. Done
+### 3. Verify It's Running
 
-Gateway restarts → backup starts automatically → your agents' conversations are being saved.
+```bash
+# Check plugin status
+openclaw plugins inspect openclaw-memory-system --runtime --json
+
+# Backups appear here after a few minutes
+ls ~/.openclaw/raw-memory-backup/
+```
+
+### 4. (Optional) Install the Search Skill
+
+Copy the bundled skill to your workspace so agents can search raw conversations:
+
+```bash
+cp -r ~/.openclaw/plugins/openclaw-memory-system/skill ~/.openclaw/workspace/skills/raw-memory
+```
+
+Agents can now search:
+```bash
+node ~/.openclaw/workspace/skills/raw-memory/scripts/search.js search --agent main --query "keyword"
+```
+
+That's it. The watcher starts automatically with the Gateway and backs up conversations every 10 minutes. No further configuration needed.
 
 ---
 
@@ -71,78 +94,77 @@ Gateway restarts → backup starts automatically → your agents' conversations 
 ```
 ~/.openclaw/raw-memory-backup/
 ├── main/
-│   ├── 2026-07-06.md
-│   ├── 2026-07-07.md
-│   └── 2026-07-08.md
-├── loli/
-│   └── 2026-07-08.md
-├── miya/
-│   └── 2026-07-08.md
-└── yuki/
-    └── 2026-07-08.md
+│   ├── 2026-07-08.md
+│   ├── 2026-07-09.md
+│   └── 2026-07-10.md
+├── pulse/
+│   └── 2026-07-10.md
+├── lumina/
+│   └── 2026-07-10.md
+└── ...
 ```
 
 ### What a Backup File Looks Like
 
 ```markdown
-# Agent: main — 2026-07-08
+# RAW: 2026-07-08
 
-## Session: 09:15:32
-User: 帮我查一下最近的天气
-Assistant: 好的，让我查一下~ [calls weather tool]
+--- 2026-07-08T09:15:32 | source:gateway ---
+**User:** Help me check the weather
 
-## Session: 14:20:00
-User: 帮我写一封邮件给客户
-Assistant: 好的，我来起草~ [calls write tool]
+--- 2026-07-08T09:15:35 | source:gateway ---
+**Alix:** Sure, let me check that for you
+
+--- 2026-07-08T14:20:00 | source:gateway ---
+**User:** Write an email to the client
 ```
 
-Every message, every tool call, every timestamp — preserved exactly as it happened.
+Every message, every timestamp — preserved exactly as it happened.
 
 ### Search Tool
 
 When an agent discovers missing memory, it can search raw conversations:
 
 ```bash
-node raw-tools.js search --agent main --query "keyword" --limit 3
+# Search for keywords
+node scripts/search.js search --agent main --query "keyword" --limit 3
+
+# Search within date range
+node scripts/search.js search --agent main --query "database" --from 2026-07-01 --to 2026-07-10
+
+# Check backup status
+node scripts/search.js status --agent main
 ```
 
-**How it works:**
+**Search features:**
 - **Keyword matching**: All keywords must appear (AND logic)
-- **Context window**: 3 sentences before + target + 3 sentences after = 7 sentences of full context
-- **Date filtering**: Use `--from` and `--to` to filter by date range
+- **Context window**: 3 sentences before + target + 3 after = 7 sentences of context
+- **Date filtering**: `--from` and `--to` for date ranges
 - **Sort order**: Results sorted by timestamp, newest first
 
-**Output format:**
-```json
-{
-  "results": [
-    {
-      "timestamp": "2026-07-08T09:15:32Z",
-      "date": "2026-07-08",
-      "snippet": "context before...\n\n**User:** help me check...\n\n**Assistant:** sure...\n\ncontext after...",
-      "source": "2026-07-08.md",
-      "contextRange": "7 sentences"
-    }
-  ],
-  "total": 3
-}
-```
+---
 
-**All commands:**
-```bash
-# Incremental save current session
-node raw-tools.js save --agent main
+## Configuration
 
-# Extract all historical sessions
-node raw-tools.js save --agent main --all
+All configuration is **optional**. The system auto-detects everything by default.
 
-# Search
-node raw-tools.js search --agent main --query "keyword" --limit 3
-node raw-tools.js search --agent main --query "keyword" --from 2026-07-01 --to 2026-07-08
+### Environment Variables
 
-# Check status
-node raw-tools.js status --agent main
-```
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `RAW_MEMORY_BACKUP_PATH` | Backup storage path | `~/.openclaw/raw-memory-backup` |
+| `RAW_MEMORY_POLL_INTERVAL` | Poll interval in milliseconds | `600000` (10 min) |
+| `TZ` | IANA timezone for date formatting | System timezone |
+| `RAW_MEMORY_USER_LABEL` | Display name for user messages | Auto-detected or `"User"` |
+| `RAW_MEMORY_AGENT_MAIN` | Display name for `main` agent | Auto-detected |
+| `RAW_MEMORY_AGENT_PULSE` | Display name for `pulse` agent | Auto-detected |
+| `RAW_MEMORY_AGENT_LUMINA` | Display name for `lumina` agent | Auto-detected |
+| `RAW_MEMORY_AGENT_ATLAS` | Display name for `atlas` agent | Auto-detected |
+| `RAW_MEMORY_AGENT_LEXIS` | Display name for `lexis` agent | Auto-detected |
+
+**Agent label pattern**: `RAW_MEMORY_AGENT_<AGENTID>` where `<AGENTID>` is the agent ID uppercased. Works for any agent, not just the ones listed above.
+
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full configuration guide.
 
 ---
 
@@ -162,73 +184,33 @@ node raw-tools.js status --agent main
 
 ---
 
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `RAW_MEMORY_BACKUP_PATH` | Backup storage path | `~/.openclaw/raw-memory-backup` |
-| `RAW_MEMORY_POLL_INTERVAL` | Poll interval (ms) | `600000` (10 min) |
-| `OPENCLAW_WORKSPACE_BASE` | Workspace root | `~/.openclaw` |
-| `OPENCLAW_AGENTS_DIR` | Agents directory | `~/.openclaw/agents` |
-
-### openclaw.json Config
-
-```json
-{
-  "hooks": {
-    "internal": {
-      "enabled": true,
-      "entries": {
-        "raw-backup": {
-          "enabled": true,
-          "config": {
-            "RAW_MEMORY_BACKUP_PATH": "/custom/path",
-            "RAW_MEMORY_POLL_INTERVAL": 600000
-          }
-        }
-      }
-    }
-  }
-}
-```
-
----
-
 ## Use Cases
 
-### 🔍 Debugging Agent Behavior
-> "Why did my agent say that?" — Search the raw conversation to find the exact moment.
-
-### 📜 Compliance & Audit
-> "What did my agent promise to that client?" — Every word is preserved.
-
-### 🧩 Memory Recovery
-> "My agent forgot something important." — Search raw logs, find it, add it back to MEMORY.md.
-
-### 📊 Analytics
-> "How much does my agent actually talk?" — Count messages, track usage patterns.
+- **🔍 Debugging Agent Behavior** — "Why did my agent say that?"
+- **📜 Compliance & Audit** — "What did my agent promise to that client?"
+- **🧩 Memory Recovery** — "My agent forgot something important."
+- **📊 Analytics** — "How much does my agent actually talk?"
 
 ---
 
-## FAQ
+## Documentation
 
-**Q: Does this slow down my Gateway?**
-A: No. The hook runs a lightweight file poll every 10 minutes. Zero impact on Gateway performance.
+- [Architecture](docs/ARCHITECTURE.md) — System design and data flow
+- [Configuration](docs/CONFIGURATION.md) — Full configuration reference
+- [Migration Guide](docs/MIGRATION.md) — Migrating from v1.x
 
-**Q: How much disk space does it use?**
-A: A busy agent produces ~50-100KB per day. A year of conversations ≈ 20-35MB.
+---
 
-**Q: Can agents access each other's backups?**
-A: Each agent can only search its own backup files by default.
+## Credits
 
-**Q: What if I already have the built-in memory system?**
-A: They work together perfectly. This system is a safety net, not a replacement.
+This project is a fork of [openclaw-memory-system](https://github.com/oceanwh/openclaw-memory-system) by **[oceanwh](https://github.com/oceanwh)**, originally created under the MIT License.
+
+The v2.0 refactor was done by the [Xylem Team](https://github.com/xylem-team) to support the new OpenClaw plugin API (`register(api)` with `registerHook()`), remove all hardcoded values, and add full documentation.
+
+All credit for the original concept and implementation goes to oceanwh. 🙏
 
 ---
 
 ## License
 
-MIT License
-MIT License
+MIT License — see [LICENSE](LICENSE). Both the original work and this fork are released under MIT.

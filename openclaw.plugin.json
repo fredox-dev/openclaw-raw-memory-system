@@ -1,0 +1,47 @@
+{
+  "id": "openclaw-memory-system",
+  "name": "OpenClaw Memory System",
+  "version": "2.0.0",
+  "description": "Raw conversation backup system for OpenClaw agents — zero token cost, full fidelity, searchable.",
+  "enabledByDefault": false,
+  "activation": {
+    "onStartup": true
+  },
+  "extensions": ["./dist/index.js"],
+  "hooks": {
+    "raw-backup": {
+      "description": "Automatically backup all agent conversations to Markdown files",
+      "events": ["gateway:startup", "gateway:shutdown"]
+    }
+  },
+  "skills": {
+    "raw-memory-search": {
+      "description": "Search raw conversation memory when recall is incomplete"
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "RAW_MEMORY_BACKUP_PATH": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Custom backup storage path (default: ~/.openclaw/raw-memory-backup)"
+      },
+      "RAW_MEMORY_POLL_INTERVAL": {
+        "type": "number",
+        "minimum": 10000,
+        "description": "Poll interval in milliseconds (default: 600000 = 10 min)"
+      },
+      "RAW_MEMORY_USER_LABEL": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Display label for user messages (default: User)"
+      },
+      "RAW_MEMORY_TIMEZONE": {
+        "type": "string",
+        "description": "IANA timezone for date formatting (default: system timezone)"
+      }
+    }
+  }
+}
