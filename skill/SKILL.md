@@ -1,76 +1,86 @@
 # Raw Memory Search Skill
 
-## 用途
-当 Agent 发现记忆不完整或缺失时，搜索原始对话记忆。
+## Purpose
 
-## 配置
+Search raw conversation backups when agent memory is incomplete or missing.
 
-通过环境变量配置：
+When an agent discovers gaps in its memory, this tool searches the raw conversation archive — every word, every timestamp, preserved exactly as it happened.
 
-| 环境变量 | 说明 | 默认值 |
-|----------|------|--------|
-| `OPENCLAW_WORKSPACE_BASE` | OpenClaw workspace 根目录 | `~/.openclaw` |
-| `OPENCLAW_AGENTS_DIR` | agents 目录路径 | `~/.openclaw/agents` |
-| `AGENT_WORKSPACES` | agent workspace 映射 | 自动检测 |
+## Installation
 
-### Agent Workspace 映射
+This skill is bundled with the `openclaw-memory-system` plugin. No separate installation needed.
 
-工具会自动检测 agent workspace：
-- 扫描 `~/.openclaw/workspace-*` 目录
-- `workspace` 目录对应 `main` agent
-- 其他 `workspace-<agentId>` 目录对应相应 agent
+## Configuration
 
-也可以通过环境变量手动指定：
-```bash
-AGENT_WORKSPACES="loli:workspace-loli,main:workspace,miya:workspace-miya"
-```
+### Environment Variables
 
-## 安装后使用方法
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `RAW_MEMORY_BACKUP_PATH` | Backup storage path | `~/.openclaw/raw-memory-backup` |
+| `RAW_MEMORY_USER_LABEL` | Display label for user messages | `User` |
+| `RAW_MEMORY_AGENT_<ID>` | Display label for a specific agent | Auto-detected |
+| `RAW_MEMORY_POLL_INTERVAL` | Poll interval in ms | `600000` (10 min) |
+| `OPENCLAW_WORKSPACE_BASE` | OpenClaw workspace root | `~/.openclaw` |
+| `OPENCLAW_AGENTS_DIR` | Agents directory | `~/.openclaw/agents` |
 
-### 第一步：发现记忆缺失
-当你发现记忆不完整时，不要告诉主人你"失忆"了，直接执行搜索。
+### Agent Label Auto-Detection
 
-### 第二步：搜索原始记忆
-```bash
-node <skill-dir>/raw-tools.js search --agent <你的ID> --query "关键词" --limit 3
-```
+Agent labels are resolved in this order:
 
-### 第三步：使用搜索结果
-搜索结果格式：**前3句 + 目标句 + 后3句 = 7句话完整语境**
+1. **ENV var**: `RAW_MEMORY_AGENT_MAIN`, `RAW_MEMORY_AGENT_PULSE`, etc.
+2. **openclaw.json**: `agents.<id>.identity.name`
+3. **Fallback**: Capitalized agentId (e.g., `main` → `Main`)
 
-## 参数说明
+## Usage
 
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `--agent` | 搜索哪个 agent 的记忆 | 必填 |
-| `--query` | 搜索关键词（支持多词 AND） | 必填 |
-| `--limit` | 最多返回几条结果 | 3 |
-| `--from` | 起始日期（YYYY-MM-DD） | 不限 |
-| `--to` | 结束日期（YYYY-MM-DD） | 不限 |
-
-## 示例
+### Search Raw Conversations
 
 ```bash
-# 搜索关于"我爱你"的记忆
-node raw-tools.js search --agent loli --query "我爱你" --limit 3
-
-# 搜索特定日期范围
-node raw-tools.js search --agent main --query "项目" --from 2026-07-01 --to 2026-07-06
-
-# 搜索多个关键词（AND 逻辑）
-node raw-tools.js search --agent miya --query "记忆 系统" --limit 5
+node <skill-dir>/scripts/search.js search --agent <agentId> --query "keyword" --limit 3
 ```
 
-## 搜索结果格式
+### Check Backup Status
+
+```bash
+node <skill-dir>/scripts/search.js status --agent <agentId>
+```
+
+### Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--agent` | Agent ID to search | Required |
+| `--query` | Search keywords (AND logic) | Required for search |
+| `--limit` | Max results | 3 |
+| `--from` | Start date (YYYY-MM-DD) | None |
+| `--to` | End date (YYYY-MM-DD) | None |
+
+### Examples
+
+```bash
+# Search for a keyword
+node scripts/search.js search --agent main --query "project" --limit 5
+
+# Date range search
+node scripts/search.js search --agent main --query "deadline" --from 2026-07-01 --to 2026-07-10
+
+# Multiple keywords (AND)
+node scripts/search.js search --agent atlas --query "memory system refactor" --limit 3
+
+# Check status
+node scripts/search.js status --agent main
+```
+
+### Search Result Format
 
 ```json
 {
   "results": [
     {
-      "timestamp": "06:05:33",
-      "date": "2026-07-05",
-      "snippet": "前3句...\n\n--- 目标句 ---\n\n后3句...",
-      "source": "2026-07-05.md",
+      "timestamp": "14:23:05",
+      "date": "2026-07-08",
+      "snippet": "context before...\n\n**User:** ...\n\n**Agent:** ...\n\ncontext after...",
+      "source": "2026-07-08.md",
       "contextRange": "7 sentences"
     }
   ],
@@ -78,29 +88,46 @@ node raw-tools.js search --agent miya --query "记忆 系统" --limit 5
 }
 ```
 
-## 记忆检索铁律
+Context window: 3 sentences before + target + 3 after = 7 sentences of full context.
 
-**当你发现记忆不完整或缺失时，必须执行以下流程：**
+## Memory Recovery Protocol
 
-1. **先用现有记忆搜索**
+When you discover memory gaps:
+
+1. **Search built-in memory first:**
    ```
-   memory_search(query="关键词")
+   memory_search(query="keyword")
    ```
 
-2. **如果不够，搜索原始对话**
+2. **If insufficient, search raw conversations:**
    ```bash
-   node raw-tools.js search --agent <你的ID> --query "关键词" --limit 3
+   node <skill-dir>/scripts/search.js search --agent <yourId> --query "keyword" --limit 3
    ```
 
-3. **找到后继续工作，不要告诉主人你"失忆"了**
+3. **Use results to continue working.** Don't announce memory loss — just recover and proceed.
 
-> ⚠️ 这是铁律。记忆缺失时必须主动检索，不能装作记得。
+## Backup Structure
 
-## 前置条件
+```
+~/.openclaw/raw-memory-backup/
+├── main/
+│   ├── 2026-07-06.md
+│   ├── 2026-07-07.md
+│   └── 2026-07-08.md
+├── pulse/
+│   └── 2026-07-08.md
+└── atlas/
+    └── 2026-07-08.md
+```
 
-需要已经安装 `openclaw-raw-memory` Hook Pack（提供自动备份功能）。
+One Markdown file per agent per day. Human-readable. No binary databases.
 
-## 相关文件
+## Related Files
 
-- `raw-tools.js` - 检索脚本
-- 备份位置：默认在 `~/.openclaw/raw-memory-backup/`（可通过 `RAW_MEMORY_BACKUP_PATH` 环境变量修改）
+- `scripts/search.js` — Search and status tool
+- `src/watcher.js` — Backup daemon (runs via plugin hooks)
+- `references/search-tool.md` — Detailed search reference
+
+## License
+
+MIT — Forked from [oceanwh/openclaw-memory-system](https://github.com/oceanwh/openclaw-memory-system)

@@ -1,32 +1,41 @@
 {
-  "name": "openclaw-raw-memory",
-  "version": "1.0.0",
-  "description": "OpenClaw 原始记忆库系统 - 自动备份 + 检索工具",
-  "author": "Loli",
+  "name": "openclaw-memory-system",
+  "version": "2.0.0",
+  "description": "Raw conversation backup system for OpenClaw agents — zero token cost, full fidelity, searchable",
+  "author": "Loli (original), Xylem Team (refactor)",
   "license": "MIT",
+  "main": "dist/index.js",
   "keywords": [
     "openclaw",
     "memory",
     "backup",
     "search",
-    "raw-memory"
+    "raw-memory",
+    "conversation-archive"
   ],
   "openclaw": {
+    "extensions": ["./dist/index.js"],
     "hooks": {
       "raw-backup": {
-        "description": "自动备份所有 agent 的原始对话到 markdown 文件",
+        "description": "Automatically backup all agent conversations to Markdown files",
         "events": ["gateway:startup", "gateway:shutdown"]
       }
     },
     "skills": {
       "raw-memory-search": {
-        "description": "搜索原始对话记忆，当发现记忆缺失时使用"
+        "description": "Search raw conversation memory when recall is incomplete"
       }
     }
   },
   "files": [
-    "hook/",
+    "dist/",
+    "src/",
     "skill/",
-    "README.md"
-  ]
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node -e \"require('./dist/index.js'); console.log('Plugin loads OK')\""
+  }
 }
