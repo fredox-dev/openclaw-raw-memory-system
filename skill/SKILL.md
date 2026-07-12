@@ -77,9 +77,9 @@ node scripts/search.js status --agent main
 {
   "results": [
     {
-      "timestamp": "14:23:05",
+      "timestamp": "2026-07-08T14:23:05",
       "date": "2026-07-08",
-      "snippet": "context before...\n\n**User:** ...\n\n**Agent:** ...\n\ncontext after...",
+      "snippet": "--- 2026-07-08T14:20:00 | source:gateway ---\n**User:** context before...\n\n--- 2026-07-08T14:23:05 | source:gateway ---\n**Agent:** matched message...\n\n--- 2026-07-08T14:25:00 | source:gateway ---\n**User:** context after...",
       "source": "2026-07-08.md",
       "contextRange": "7 sentences"
     }
@@ -88,7 +88,7 @@ node scripts/search.js status --agent main
 }
 ```
 
-Context window: 3 sentences before + target + 3 after = 7 sentences of full context.
+Context window: 3 blocks before + target + 3 after = 7 blocks of full context. Snippets longer than 1500 chars are truncated.
 
 ## Memory Recovery Protocol
 
@@ -128,6 +128,11 @@ One Markdown file per agent per day. Human-readable. No binary databases.
 - `src/watcher.js` — Backup daemon (runs via plugin hooks)
 - `references/search-tool.md` — Detailed search reference
 
+## Credits
+
+Based on [openclaw-memory-system](https://github.com/oceanwh/openclaw-memory-system) by [oceanwh](https://github.com/oceanwh) (MIT License).
+Refactored for OpenClaw plugin API v2 by the [Xylem Team](https://github.com/xylem-team).
+
 ## License
 
-MIT — Forked from [oceanwh/openclaw-memory-system](https://github.com/oceanwh/openclaw-memory-system)
+MIT — see [LICENSE](../../LICENSE)

@@ -56,25 +56,34 @@ openclaw plugins install git:github.com/xylem-team/openclaw-raw-memory-system
 ### 2. Enable and Restart
 
 ```bash
-openclaw plugins enable openclaw-raw-memory-system
+openclaw plugins enable openclaw-memory-system
 openclaw gateway restart
 ```
 
-### 3. Done
+### 3. Verify It's Running
 
-Gateway starts → backup begins automatically → your agents' conversations are being saved.
+```bash
+# Check plugin status
+openclaw plugins inspect openclaw-memory-system --runtime --json
+
+# Backups appear here after a few minutes
+ls ~/.openclaw/raw-memory-backup/
+```
 
 ### 4. (Optional) Install the Search Skill
 
+Copy the bundled skill to your workspace so agents can search raw conversations:
+
 ```bash
-# Copy the skill to your workspace
-cp -r ~/.openclaw/plugins/openclaw-raw-memory-system/skill ~/.openclaw/workspace/skills/raw-memory
+cp -r ~/.openclaw/plugins/openclaw-memory-system/skill ~/.openclaw/workspace/skills/raw-memory
 ```
 
-Agents can now search raw conversations:
+Agents can now search:
 ```bash
-node ~/.openclaw/workspace/skills/raw-memory/scripts/search.js --agent main --query "keyword"
+node ~/.openclaw/workspace/skills/raw-memory/scripts/search.js search --agent main --query "keyword"
 ```
+
+That's it. The watcher starts automatically with the Gateway and backs up conversations every 10 minutes. No further configuration needed.
 
 ---
 
@@ -118,13 +127,13 @@ When an agent discovers missing memory, it can search raw conversations:
 
 ```bash
 # Search for keywords
-node scripts/search.js --agent main --query "keyword" --limit 3
+node scripts/search.js search --agent main --query "keyword" --limit 3
 
 # Search within date range
-node scripts/search.js --agent main --query "database" --from 2026-07-01 --to 2026-07-10
+node scripts/search.js search --agent main --query "database" --from 2026-07-01 --to 2026-07-10
 
 # Check backup status
-node scripts/search.js --agent main --status
+node scripts/search.js status --agent main
 ```
 
 **Search features:**
@@ -137,23 +146,25 @@ node scripts/search.js --agent main --status
 
 ## Configuration
 
-All configuration is optional. The system auto-detects everything by default.
+All configuration is **optional**. The system auto-detects everything by default.
 
 ### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `RAW_MEMORY_BACKUP_PATH` | Backup storage path | `~/.openclaw/raw-memory-backup` |
-| `RAW_MEMORY_POLL_INTERVAL` | Poll interval (ms) | `600000` (10 min) |
-| `TZ` | IANA timezone | System timezone |
-| `RAW_MEMORY_USER_LABEL` | Display name for user | Auto-detected or `"User"` |
+| `RAW_MEMORY_POLL_INTERVAL` | Poll interval in milliseconds | `600000` (10 min) |
+| `TZ` | IANA timezone for date formatting | System timezone |
+| `RAW_MEMORY_USER_LABEL` | Display name for user messages | Auto-detected or `"User"` |
 | `RAW_MEMORY_AGENT_MAIN` | Display name for `main` agent | Auto-detected |
 | `RAW_MEMORY_AGENT_PULSE` | Display name for `pulse` agent | Auto-detected |
 | `RAW_MEMORY_AGENT_LUMINA` | Display name for `lumina` agent | Auto-detected |
 | `RAW_MEMORY_AGENT_ATLAS` | Display name for `atlas` agent | Auto-detected |
 | `RAW_MEMORY_AGENT_LEXIS` | Display name for `lexis` agent | Auto-detected |
 
-See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for full configuration guide.
+**Agent label pattern**: `RAW_MEMORY_AGENT_<AGENTID>` where `<AGENTID>` is the agent ID uppercased. Works for any agent, not just the ones listed above.
+
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full configuration guide.
 
 ---
 
@@ -192,9 +203,14 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for full configuration guide.
 
 ## Credits
 
-- **Original author**: [oceanwh](https://github.com/oceanwh) — created `openclaw-memory-system` v1.x
-- **Refactored by**: Pulse — OpenClaw plugin API v2 adaptation, hardcoded removal, documentation (2026-07-12)
+This project is a fork of [openclaw-memory-system](https://github.com/oceanwh/openclaw-memory-system) by **[oceanwh](https://github.com/oceanwh)**, originally created under the MIT License.
+
+The v2.0 refactor was done by the [Xylem Team](https://github.com/xylem-team) to support the new OpenClaw plugin API (`register(api)` with `registerHook()`), remove all hardcoded values, and add full documentation.
+
+All credit for the original concept and implementation goes to oceanwh. 🙏
+
+---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE)
+MIT License — see [LICENSE](LICENSE). Both the original work and this fork are released under MIT.

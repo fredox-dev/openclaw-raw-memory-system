@@ -2,7 +2,7 @@
   "name": "openclaw-memory-system",
   "version": "2.0.0",
   "description": "Raw conversation backup system for OpenClaw agents — zero token cost, full fidelity, searchable",
-  "author": "Loli (original), Xylem Team (refactor)",
+  "author": "oceanwh (original), Xylem Team (refactor)",
   "license": "MIT",
   "main": "dist/index.js",
   "keywords": [
