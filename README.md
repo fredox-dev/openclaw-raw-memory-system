@@ -4,7 +4,7 @@
 
 Zero-cost, full-fidelity backup of every conversation your OpenClaw agents ever had. Searchable, human-readable, and it never calls an LLM.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform: OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-red.svg)](https://github.com/openclaw/openclaw) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
@@ -50,13 +50,13 @@ Agent talks → Gateway writes JSONL → This plugin reads JSONL → Daily .md f
 ### 1. Install the Plugin
 
 ```bash
-openclaw plugins install git:github.com/xylem-team/openclaw-raw-memory-system
+openclaw plugins install git:github.com/fredox-dev/openclaw-raw-memory-system
 ```
 
 ### 2. Enable and Restart
 
 ```bash
-openclaw plugins enable openclaw-memory-system
+openclaw plugins enable openclaw-raw-memory-system
 openclaw gateway restart
 ```
 
@@ -75,7 +75,7 @@ ls ~/.openclaw/raw-memory-backup/
 Copy the bundled skill to your workspace so agents can search raw conversations:
 
 ```bash
-cp -r ~/.openclaw/plugins/openclaw-memory-system/skill ~/.openclaw/workspace/skills/raw-memory
+cp -r ~/.openclaw/plugins/openclaw-raw-memory-system/skill ~/.openclaw/workspace/skills/raw-memory
 ```
 
 Agents can now search:
