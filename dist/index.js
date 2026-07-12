@@ -4,7 +4,7 @@
  * Raw Memory System v2.0.0
  * Forked from oceanwh/openclaw-memory-system
  *
- * Uses the new OpenClaw plugin API (api.on()) for lifecycle hooks.
+ * Uses the OpenClaw plugin API: register(api) with registerHook().
  */
 
 const { spawn } = require('child_process');
@@ -13,32 +13,36 @@ const fs = require('fs');
 
 let backupProcess = null;
 
-function getWatcherPath() {
-  // Try multiple locations
-  const pluginDir = path.dirname(__filename);
-  const localWatcher = path.join(pluginDir, '..', 'src', 'watcher.js');
+function getWatcherPath(pluginDir) {
+  // Try src/ relative to plugin directory
+  const localWatcher = path.join(pluginDir, 'src', 'watcher.js');
   if (fs.existsSync(localWatcher)) return localWatcher;
 
-  // Fallback: installed plugin path
-  return path.join(pluginDir, 'watcher.js');
+  // Fallback: dist/ directory
+  const distWatcher = path.join(pluginDir, 'watcher.js');
+  if (fs.existsSync(distWatcher)) return distWatcher;
+
+  return null;
 }
 
 module.exports = {
-  name: 'openclaw-memory-system',
-  version: '2.0.0',
+  id: 'openclaw-memory-system',
+  name: 'OpenClaw Memory System',
+  description: 'Raw conversation backup system — zero token cost, full fidelity, searchable.',
 
-  setup(api) {
+  register(api) {
+    const pluginDir = path.dirname(__filename);
+    const watcherScript = getWatcherPath(pluginDir);
+
+    if (!watcherScript) {
+      api.log?.(`Watcher script not found in ${pluginDir}`, 'error');
+      return;
+    }
+
     // Hook: gateway:startup — start backup watcher
-    api.on('gateway:startup', async () => {
+    api.registerHook('gateway:startup', async () => {
       if (backupProcess) {
-        api.log('Raw memory backup already running');
-        return;
-      }
-
-      const watcherScript = getWatcherPath();
-
-      if (!fs.existsSync(watcherScript)) {
-        api.log(`Watcher script not found: ${watcherScript}`, 'error');
+        api.log?.('Raw memory backup already running');
         return;
       }
 
@@ -50,20 +54,26 @@ module.exports = {
 
       backupProcess.unref();
 
-      api.log(`Raw memory backup watcher started (PID: ${backupProcess.pid})`);
+      api.log?.(`Raw memory backup watcher started (PID: ${backupProcess.pid})`);
+    }, {
+      name: 'raw-backup-start',
+      description: 'Start the raw memory backup watcher on gateway startup',
     });
 
     // Hook: gateway:shutdown — stop backup watcher
-    api.on('gateway:shutdown', async () => {
+    api.registerHook('gateway:shutdown', async () => {
       if (backupProcess && backupProcess.pid) {
         try {
           process.kill(backupProcess.pid);
-          api.log('Raw memory backup watcher stopped');
+          api.log?.('Raw memory backup watcher stopped');
         } catch (e) {
-          api.log(`Failed to stop watcher: ${e.message}`, 'error');
+          api.log?.(`Failed to stop watcher: ${e.message}`, 'error');
         }
         backupProcess = null;
       }
+    }, {
+      name: 'raw-backup-stop',
+      description: 'Stop the raw memory backup watcher on gateway shutdown',
     });
   },
 };
