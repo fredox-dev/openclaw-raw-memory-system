@@ -2,86 +2,74 @@
 
 ## Overview
 
-All configuration is resolved through the `getConfig()` function in `src/watcher.js` and `src/search.js`. Values are resolved in priority order:
+All configuration is optional. The plugin works out of the box with sensible defaults.
+
+## Configuration Priority
+
+All values follow the same 3-tier priority:
 
 ```
-Environment Variable  →  openclaw.json  →  Fallback
+1. ENV variable        (highest priority)
+2. openclaw.json       (middle)
+3. Built-in fallback   (lowest)
 ```
 
 ## Environment Variables
 
-### Core Settings
+### Backup Settings
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `RAW_MEMORY_BACKUP_PATH` | Backup file storage path | `~/.openclaw/raw-memory-backup` |
-| `RAW_MEMORY_POLL_INTERVAL` | Poll interval in milliseconds | `600000` (10 min) |
-| `OPENCLAW_BASE` | OpenClaw base directory | `~/.openclaw` |
-| `OPENCLAW_AGENTS_DIR` | Agents directory | `~/.openclaw/agents` |
+| `RAW_MEMORY_BACKUP_PATH` | Where to store backup files | `~/.openclaw/raw-memory-backup` |
+| `RAW_MEMORY_POLL_INTERVAL` | How often to poll for changes (ms) | `600000` (10 min) |
+| `RAW_MEMORY_TIMEZONE` | Timezone for date formatting | System timezone |
 
-### Timezone
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TZ` | IANA timezone identifier | `Intl.DateTimeFormat().resolvedOptions().timeZone` |
-
-The watcher uses `Intl.DateTimeFormat` with the resolved timezone to format dates and times. No manual UTC offset calculation is needed.
-
-**Examples:**
-```bash
-TZ=Europe/Paris
-TZ=America/New_York
-TZ=Asia/Shanghai
-TZ=UTC
-```
-
-### User Label
+### Display Labels
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `RAW_MEMORY_USER_LABEL` | Display name for user messages | Auto-detected or `"User"` |
+| `RAW_MEMORY_USER_LABEL` | Label for user messages | `User` |
+| `RAW_MEMORY_AGENT_MAIN` | Label for `main` agent | Auto-detected |
+| `RAW_MEMORY_AGENT_PULSE` | Label for `pulse` agent | Auto-detected |
+| `RAW_MEMORY_AGENT_ATLAS` | Label for `atlas` agent | Auto-detected |
+| `RAW_MEMORY_AGENT_LUMINA` | Label for `lumina` agent | Auto-detected |
+| `RAW_MEMORY_AGENT_LEXIS` | Label for `lexis` agent | Auto-detected |
 
-If not set via environment variable, the system tries to read from `openclaw.json`:
-- `config.user.name`
-- `config.owner.name`
-- `config.agents.defaults.userLabel`
+Pattern: `RAW_MEMORY_AGENT_<AGENTID>` where `<AGENTID>` is the agent ID uppercased.
 
-If none found, falls back to `"User"`.
+### Path Settings
 
-### Agent Mapping
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENCLAW_AGENTS_DIR` | Directory containing agent sessions | `~/.openclaw/agents` |
+| `OPENCLAW_WORKSPACE_BASE` | OpenClaw workspace root | `~/.openclaw` |
 
-Agent display names are resolved in this order:
+## openclaw.json Configuration
 
-1. **Environment variables** (highest priority):
-   ```bash
-   RAW_MEMORY_AGENT_MAIN="Alix"
-   RAW_MEMORY_AGENT_PULSE="Pulse"
-   RAW_MEMORY_AGENT_LUMINA="Lumina"
-   RAW_MEMORY_AGENT_ATLAS="Atlas"
-   RAW_MEMORY_AGENT_LEXIS="Lexis"
-   ```
-
-2. **openclaw.json auto-detection**:
-   Reads `agents.list` array and extracts `identity.name` for each agent.
-   ```json
-   {
-     "agents": {
-       "list": [
-         { "id": "main", "identity": { "name": "Alix" } },
-         { "id": "pulse", "identity": { "name": "Pulse" } }
-       ]
-     }
-   }
-   ```
-
-3. **Fallback**: Capitalized agent ID (e.g., `main` → `Main`, `pulse` → `Pulse`)
-
-## Hook Configuration
-
-Settings can be passed via the OpenClaw hook config in `openclaw.json`:
+You can set configuration in `~/.openclaw/openclaw.json`:
 
 ```json
 {
+  "user": {
+    "name": "Fredox"
+  },
+  "agents": {
+    "main": {
+      "identity": {
+        "name": "Alix"
+      }
+    },
+    "pulse": {
+      "identity": {
+        "name": "Pulse"
+      }
+    },
+    "atlas": {
+      "identity": {
+        "name": "Atlas"
+      }
+    }
+  },
   "hooks": {
     "internal": {
       "enabled": true,
@@ -89,15 +77,9 @@ Settings can be passed via the OpenClaw hook config in `openclaw.json`:
         "raw-backup": {
           "enabled": true,
           "config": {
-            "RAW_MEMORY_BACKUP_PATH": "/custom/backup/path",
+            "RAW_MEMORY_BACKUP_PATH": "/custom/path",
             "RAW_MEMORY_POLL_INTERVAL": 300000,
-            "RAW_MEMORY_USER_LABEL": "Fredox",
-            "RAW_MEMORY_AGENT_MAIN": "Alix",
-            "RAW_MEMORY_AGENT_PULSE": "Pulse",
-            "RAW_MEMORY_AGENT_LUMINA": "Lumina",
-            "RAW_MEMORY_AGENT_ATLAS": "Atlas",
-            "RAW_MEMORY_AGENT_LEXIS": "Lexis",
-            "TZ": "Europe/Paris"
+            "RAW_MEMORY_USER_LABEL": "Fredox"
           }
         }
       }
@@ -106,106 +88,61 @@ Settings can be passed via the OpenClaw hook config in `openclaw.json`:
 }
 ```
 
-Hook config values are injected as environment variables by OpenClaw before spawning the watcher process.
+## Agent Label Auto-Detection
 
-## Example Setups
+If no ENV var is set for an agent, the plugin reads `openclaw.json`:
 
-### Minimal (zero config)
-
-No configuration needed. The system will:
-- Back up to `~/.openclaw/raw-memory-backup/`
-- Use system timezone
-- Label user as "User"
-- Use capitalized agent IDs
-
-### Personal setup
-
-```json
-{
-  "hooks": {
-    "internal": {
-      "entries": {
-        "raw-backup": {
-          "enabled": true,
-          "config": {
-            "RAW_MEMORY_USER_LABEL": "Fredox",
-            "TZ": "Europe/Paris"
-          }
-        }
-      }
-    }
-  }
-}
+```javascript
+// Resolution order:
+1. process.env.RAW_MEMORY_AGENT_MAIN     → "Alix"
+2. openclawConfig.agents.main.identity.name → "Alix"
+3. Fallback: capitalize("main")           → "Main"
 ```
 
-Agent names will be auto-detected from `openclaw.json`.
+## Timezone Configuration
 
-### Full custom setup
+The plugin uses timezone-aware date formatting:
 
-```json
-{
-  "hooks": {
-    "internal": {
-      "entries": {
-        "raw-backup": {
-          "enabled": true,
-          "config": {
-            "RAW_MEMORY_BACKUP_PATH": "/mnt/backup/openclaw-raw",
-            "RAW_MEMORY_POLL_INTERVAL": 300000,
-            "RAW_MEMORY_USER_LABEL": "Fredox",
-            "RAW_MEMORY_AGENT_MAIN": "Alix",
-            "RAW_MEMORY_AGENT_PULSE": "Pulse",
-            "RAW_MEMORY_AGENT_LUMINA": "Lumina",
-            "RAW_MEMORY_AGENT_ATLAS": "Atlas",
-            "RAW_MEMORY_AGENT_LEXIS": "Lexis",
-            "TZ": "Europe/Paris"
-          }
-        }
-      }
-    }
-  }
-}
+```javascript
+// Resolution order:
+1. process.env.TZ                        → "Europe/Paris"
+2. process.env.RAW_MEMORY_TIMEZONE        → "Europe/Paris"
+3. Intl.DateTimeFormat().resolvedOptions().timeZone → system default
+4. Fallback: "UTC"
 ```
 
-## Cleanup Configuration
+This ensures daily files are split at midnight in the user's local timezone, not UTC.
 
-The cleanup script (`skill/scripts/cleanup.sh`) uses:
+## Examples
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `RAW_MEMORY_BACKUP_PATH` | Backup storage path | `~/.openclaw/raw-memory-backup` |
-
-Usage:
-```bash
-# Keep last 90 days
-./cleanup.sh --agent main --days 90
-
-# Keep last 30 days
-./cleanup.sh --agent pulse --days 30
-```
-
-### Cron example (weekly cleanup)
-
-```cron
-# Every Sunday at 3:00 AM, clean up backups older than 90 days
-0 3 * * 0 /path/to/cleanup.sh --agent main --days 90
-0 3 * * 0 /path/to/cleanup.sh --agent pulse --days 90
-```
-
-## Verification
-
-Check that configuration is correctly loaded:
+### Example 1: Default Setup (Zero Config)
 
 ```bash
-# Check backup directory
-ls -la ~/.openclaw/raw-memory-backup/
+# Just install and go — everything uses defaults
+openclaw plugins install git:github.com/xylem-team/openclaw-raw-memory-system.git
+openclaw plugins enable openclaw-memory-system
+```
 
-# Check agent backups
-ls -la ~/.openclaw/raw-memory-backup/main/
+### Example 2: Custom Labels via ENV
 
-# Search with status
-node skill/scripts/search.js --agent main --status
+```bash
+export RAW_MEMORY_USER_LABEL="Fredox"
+export RAW_MEMORY_AGENT_MAIN="Alix"
+export RAW_MEMORY_AGENT_PULSE="Pulse"
 
-# Check watcher state
-cat ~/.openclaw/raw-memory-backup/watcher-state-v2.json | head -20
+openclaw gateway restart
+```
+
+### Example 3: Custom Backup Path
+
+```bash
+export RAW_MEMORY_BACKUP_PATH="/mnt/backup/openclaw-raw-memory"
+openclaw gateway restart
+```
+
+### Example 4: Faster Polling
+
+```bash
+export RAW_MEMORY_POLL_INTERVAL=120000  # 2 minutes
+openclaw gateway restart
 ```
