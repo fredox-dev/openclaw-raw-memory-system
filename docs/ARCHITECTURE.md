@@ -19,15 +19,15 @@ The plugin entry point (`dist/index.js`) uses the OpenClaw plugin API (`register
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                       OpenClaw Gateway                        │
+│                       OpenClaw Gateway                       │
 │                                                              │
-│  ┌─────────────┐    JSONL     ┌─────────────────────┐       │
-│  │ Agent       │ ──────────►  │ Session Storage     │       │
-│  │ Sessions    │              │ (~/.openclaw/agents)│       │
-│  └─────────────┘              └─────────┬───────────┘       │
+│  ┌─────────────┐    JSONL     ┌─────────────────────┐        │
+│  │ Agent       │ ──────────►  │ Session Storage     │        │
+│  │ Sessions    │              │ (~/.openclaw/agents)│        │
+│  └─────────────┘              └─────────┬───────────┘        │
 │                                          │                   │
-│  ┌──────────────────────────────────────┘                   │
-│  │ gateway:startup event                                      │
+│  ┌──────────────────────────────────────┘                    │
+│  │ gateway:startup event                                     │
 │  ▼                                                           │
 │  ┌───────────────────────────────────────────────────┐       │
 │  │ dist/index.js (Plugin Entry Point)                │       │
