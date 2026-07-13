@@ -1,12 +1,20 @@
+<div align="center">
+
 # 🧠 OpenClaw Raw Memory System
 
-> **Your agent said it. Now you can prove it.**
-
-Zero-cost, full-fidelity backup of every conversation your OpenClaw agents ever had. Searchable, human-readable, and it never calls an LLM.
+**OpenClaw Raw Memory System – an automated backup and retrieval tool**
 
 [![Platform: OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-red.svg)](https://github.com/openclaw/openclaw) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
+
+English | <a href="README_fr.md">Français</a>
+
+</div>
+ 
+> **Your agent said it. Now you can prove it.**
+
+Zero-cost, full-fidelity backup of every conversation your OpenClaw agents ever had. Searchable, human-readable, and it never calls an LLM.
 
 ## The Problem
 
@@ -64,7 +72,7 @@ openclaw gateway restart
 
 ```bash
 # Check plugin status
-openclaw plugins inspect openclaw-memory-system --runtime --json
+openclaw plugins inspect openclaw-raw-memory-system --runtime --json
 
 # Backups appear here after a few minutes
 ls ~/.openclaw/raw-memory-backup/
