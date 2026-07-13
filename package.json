@@ -14,6 +14,12 @@
     "conversation-archive"
   ],
   "openclaw": {
+    "compat": {
+      "pluginApi": "1.0.0"
+    },
+    "build": {
+      "openclawVersion": "2026.6.0"
+    },
     "extensions": ["./dist/index.js"],
     "hooks": {
       "raw-backup": {
@@ -33,6 +39,7 @@
     "skill/",
     "docs/",
     "README.md",
+    "README_fr.md",
     "LICENSE"
   ],
   "scripts": {
