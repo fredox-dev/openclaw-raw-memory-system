@@ -2,7 +2,7 @@
 
 <div align="center">
 
-English | <a href="README_fr.md">Français</a>
+English | <a href="CONFIGURATION_fr.md">Français</a>
 
 </div>
 

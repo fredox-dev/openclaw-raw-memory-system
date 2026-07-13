@@ -1,6 +1,12 @@
 # Raw Memory Search
 
-Search through complete, uncurated conversation backups stored by the `openclaw-memory-system` plugin.
+<div align="center">
+
+English | <a href="README_fr.md">Français</a>
+
+</div>
+
+Search through complete, uncurated conversation backups stored by the `openclaw-raw-memory-system` plugin.
 
 ## Purpose
 
@@ -39,13 +45,13 @@ node scripts/search.js status --agent main
 
 ## Requirements
 
-- `openclaw-memory-system` plugin must be installed and running
+- `openclaw-raw-memory-system` plugin must be installed and running
 - Backup location: `~/.openclaw/raw-memory-backup/<agent>/<date>.md`
 - Node.js installed
 
 ## How It Works
 
-1. The `openclaw-memory-system` plugin runs a background watcher that backs up agent conversations to daily Markdown files
+1. The `openclaw-raw-memory-system` plugin runs a background watcher that backs up agent conversations to daily Markdown files
 2. This skill's `search.js` reads those files and performs keyword matching with a context window
 3. Results include surrounding context (3 messages before + match + 3 after = 7 total)
 
@@ -76,7 +82,7 @@ Agent query → LanceDB → MEMORY.md → Raw Memory (this skill) → Promote to
 
 ## Maintenance
 
-- **Daily backup**: Handled automatically by the `openclaw-memory-system` plugin
+- **Daily backup**: Handled automatically by the `openclaw-raw-memory-system` plugin
 - **Cleanup**: Run `cleanup.sh` weekly or monthly to prune old files
 - **Storage**: ~20–35 MB per year per agent (typical usage)
 

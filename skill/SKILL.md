@@ -8,7 +8,7 @@ When an agent discovers gaps in its memory, this tool searches the raw conversat
 
 ## Installation
 
-This skill is bundled with the `openclaw-memory-system` plugin. No separate installation needed.
+This skill is bundled with the `openclaw-raw-memory-system` plugin. No separate installation needed.
 
 ## Configuration
 
@@ -127,12 +127,3 @@ One Markdown file per agent per day. Human-readable. No binary databases.
 - `scripts/search.js` — Search and status tool
 - `src/watcher.js` — Backup daemon (runs via plugin hooks)
 - `references/search-tool.md` — Detailed search reference
-
-## Credits
-
-Based on [openclaw-memory-system](https://github.com/oceanwh/openclaw-memory-system) by [oceanwh](https://github.com/oceanwh) (MIT License).
-Refactored for OpenClaw plugin API v2 by the [Xylem Team](https://github.com/xylem-team).
-
-## License
-
-MIT — see [LICENSE](../../LICENSE)

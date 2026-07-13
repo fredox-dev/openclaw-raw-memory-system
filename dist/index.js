@@ -26,8 +26,8 @@ function getWatcherPath(pluginDir) {
 }
 
 module.exports = {
-  id: 'openclaw-memory-system',
-  name: 'OpenClaw Memory System',
+  id: 'openclaw-raw-memory-system',
+  name: 'OpenClaw Raw Memory System',
   description: 'Raw conversation backup system — zero token cost, full fidelity, searchable.',
 
   register(api) {

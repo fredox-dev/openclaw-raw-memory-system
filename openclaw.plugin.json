@@ -1,6 +1,6 @@
 {
-  "id": "openclaw-memory-system",
-  "name": "OpenClaw Memory System",
+  "id": "openclaw-raw-memory-system",
+  "name": "OpenClaw Raw Memory System",
   "version": "2.0.0",
   "description": "Raw conversation backup system for OpenClaw agents — zero token cost, full fidelity, searchable.",
   "enabledByDefault": false,
