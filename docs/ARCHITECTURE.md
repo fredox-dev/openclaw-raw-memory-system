@@ -1,5 +1,11 @@
 # Architecture
 
+<div align="center">
+
+English | <a href="README_fr.md">Français</a>
+
+</div>
+
 ## Overview
 
 The Raw Memory System is a two-component plugin for OpenClaw:
@@ -73,8 +79,8 @@ The plugin uses the OpenClaw plugin API v2 with the `register(api)` pattern:
 
 ```javascript
 module.exports = {
-  id: 'openclaw-memory-system',
-  name: 'OpenClaw Memory System',
+  id: 'openclaw-raw-memory-system',
+  name: 'OpenClaw Raw Memory System',
 
   register(api) {
     api.registerHook('gateway:startup', async () => {
