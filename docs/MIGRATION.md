@@ -1,12 +1,18 @@
 # Migration Guide
 
-## Migrating from v1 (`openclaw-raw-memory`) to v2 (`openclaw-memory-system`)
+<div align="center">
+
+English | <a href="README_fr.md">Français</a>
+
+</div>
+
+## Migrating from v1 (`openclaw-raw-memory`) to v2 (`openclaw-raw-memory-system`)
 
 ### What Changed
 
 | Aspect | v1 | v2 |
 |--------|----|----|
-| Plugin name | `openclaw-raw-memory` | `openclaw-memory-system` |
+| Plugin name | `openclaw-raw-memory` | `openclaw-raw-memory-system` |
 | Plugin API | Old hook format | New `register(api)` with `api.registerHook()` |
 | Plugin manifest | — | `openclaw.plugin.json` added |
 | Timezone | Hardcoded UTC+8 | System timezone (auto-detected, configurable) |
@@ -27,8 +33,8 @@ openclaw plugins disable openclaw-raw-memory
 #### 2. Install the New Plugin
 
 ```bash
-openclaw plugins install git:github.com/xylem-team/openclaw-raw-memory-system
-openclaw plugins enable openclaw-memory-system
+openclaw plugins install git:github.com/fredox-dev/openclaw-raw-memory-system
+openclaw plugins enable openclaw-raw-memory-system
 ```
 
 #### 3. Restart Gateway
@@ -41,13 +47,13 @@ openclaw gateway restart
 
 ```bash
 # Check plugin is loaded and hooks are active
-openclaw plugins inspect openclaw-memory-system --runtime --json
+openclaw plugins inspect openclaw-raw-memory-system --runtime --json
 
 # Check backups are being created (wait a few minutes after restart)
 ls ~/.openclaw/raw-memory-backup/
 
 # Test search
-node ~/.openclaw/plugins/openclaw-memory-system/skill/scripts/search.js status --agent main
+node ~/.openclaw/plugins/openclaw-raw-memory-system/skill/scripts/search.js status --agent main
 ```
 
 ### Existing Backups
@@ -84,7 +90,7 @@ openclaw plugins uninstall openclaw-raw-memory
 
 ### Breaking Changes
 
-- **Plugin name changed**: `openclaw-raw-memory` → `openclaw-memory-system`
+- **Plugin name changed**: `openclaw-raw-memory` → `openclaw-raw-memory-system`
 - **Search script renamed and moved**: `skill/raw-tools.js` → `skill/scripts/search.js`
 - **Search CLI syntax changed**: A `search` or `status` subcommand is now required as the first argument
 - **`save` command removed**: The watcher handles all backups automatically. Manual `save` is no longer needed.
@@ -104,15 +110,3 @@ node skill/scripts/search.js search --agent main --query "keyword"
 ```
 
 Also update any skill `SKILL.md` files that reference the old paths to point to `skill/scripts/search.js`.
-
-### Updating Cron Jobs
-
-If you have cron jobs referencing the old cleanup script, update the path:
-
-```bash
-# Old
-0 3 * * 0 ~/.openclaw/plugins/openclaw-raw-memory/skill/scripts/cleanup.sh --agent main --days 90
-
-# New
-0 3 * * 0 ~/.openclaw/plugins/openclaw-memory-system/skill/scripts/cleanup.sh --agent main --days 90
-```
