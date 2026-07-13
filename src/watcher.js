@@ -351,8 +351,7 @@ function start() {
   log('Backup watcher v2.0 starting...');
   log('Backup destination: ' + config.backupBase);
   log('Timezone: ' + config.timezone);
-  log('User label: ' + config.userLabel);
-  log('Agent mapping: ' + JSON.stringify(config.agentMapping));
+  log(`Agent mapping: ${Object.keys(config.agentMapping).length} agent(s) configured`);
   log('Format: markdown, one file per day');
 
   // Ensure backup directory exists
