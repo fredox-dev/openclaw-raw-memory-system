@@ -1,5 +1,11 @@
 # Configuration
 
+<div align="center">
+
+English | <a href="README_fr.md">Français</a>
+
+</div>
+
 ## Overview
 
 All configuration is **optional**. The plugin works out of the box with sensible defaults and auto-detects as much as possible.
@@ -145,8 +151,8 @@ openclaw gateway restart
 
 ```bash
 # Just install and go — everything uses defaults
-openclaw plugins install git:github.com/xylem-team/openclaw-raw-memory-system
-openclaw plugins enable openclaw-memory-system
+openclaw plugins install git:github.com/fredox-dev/openclaw-raw-memory-system
+openclaw plugins enable openclaw-raw-memory-system
 openclaw gateway restart
 ```
 
@@ -215,7 +221,7 @@ After changing configuration, verify the watcher picked up your settings:
 
 ```bash
 # Check plugin runtime
-openclaw plugins inspect openclaw-memory-system --runtime --json
+openclaw plugins inspect openclaw-raw-memory-system --runtime --json
 
 # Check watcher logs (visible in gateway logs)
 openclaw gateway logs | grep "raw-backup"
@@ -224,7 +230,7 @@ openclaw gateway logs | grep "raw-backup"
 ls -la ~/.openclaw/raw-memory-backup/
 
 # Check search status
-node ~/.openclaw/plugins/openclaw-memory-system/skill/scripts/search.js status --agent main
+node ~/.openclaw/plugins/openclaw-raw-memory-system/skill/scripts/search.js status --agent main
 ```
 
 The watcher logs its configuration on startup, including the resolved timezone, user label, and agent mapping.
