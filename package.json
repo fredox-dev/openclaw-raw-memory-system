@@ -1,6 +1,6 @@
 {
   "name": "openclaw-raw-memory-system",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Raw conversation backup system for OpenClaw agents — zero token cost, full fidelity, searchable",
   "author": "oceanwh (original), Xylem Team (refactor)",
   "license": "MIT",
@@ -15,7 +15,7 @@
   ],
   "openclaw": {
     "compat": {
-      "pluginApi": "1.0.0"
+      "pluginApi": ">=1.0.0"
     },
     "build": {
       "openclawVersion": "2026.6.0"
