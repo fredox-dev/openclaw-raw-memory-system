@@ -1,24 +1,9 @@
 {
   "id": "openclaw-raw-memory-system",
   "name": "OpenClaw Raw Memory System",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Raw conversation backup system for OpenClaw agents — zero token cost, full fidelity, searchable.",
   "enabledByDefault": false,
-  "activation": {
-    "onStartup": true
-  },
-  "extensions": ["./dist/index.js"],
-  "hooks": {
-    "raw-backup": {
-      "description": "Automatically backup all agent conversations to Markdown files",
-      "events": ["gateway:startup", "gateway:shutdown"]
-    }
-  },
-  "skills": {
-    "raw-memory-search": {
-      "description": "Search raw conversation memory when recall is incomplete"
-    }
-  },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
