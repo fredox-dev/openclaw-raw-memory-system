@@ -10,6 +10,8 @@
 
 Toute la configuration est **optionnelle**. Le plugin fonctionne tel quel avec des valeurs par défaut sensibles et détecte automatiquement autant d'informations que possible.
 
+**Prérequis :** Node.js **>= 24** (voir `engines` dans `package.json`). Le mode SQLite repose sur le module intégré `node:sqlite` et la décompression zstd native (`node:zlib`) — zéro dépendance npm.
+
 ## Priorité de configuration
 
 Toutes les valeurs suivent le même système de priorité à 3 niveaux :
@@ -50,6 +52,27 @@ Toutes les valeurs suivent le même système de priorité à 3 niveaux :
 | `OPENCLAW_BASE` | Répertoire de base d'OpenClaw | `~/.openclaw` |
 | `OPENCLAW_AGENTS_DIR` | Répertoire contenant les sessions d'agents | `~/.openclaw/agents` |
 | `OPENCLAW_WORKSPACE_BASE` | Racine de l'espace de travail OpenClaw (utilisé par l'outil de recherche) | `~/.openclaw` |
+
+### Backfill au premier run (mode SQLite)
+
+Ces variables contrôlent à quel point le watcher remonte dans l'historique la **première fois** qu'il traite un agent en mode SQLite (c'est-à-dire tant qu'aucun état n'existe pour cet agent). Elles sont lues à chaque scrutation et s'appliquent par agent.
+
+| Variable | Description | Valeur par défaut |
+|----------|-------------|---------|
+| `RAW_MEMORY_BACKFILL_FROM` | Date/heure ISO de départ de la collecte, ex. `2026-08-01` ou `2026-08-01T00:00:00Z` | Non définie |
+| `RAW_MEMORY_BACKFILL_DAYS` | Jours d'historique à collecter, comptés en arrière depuis maintenant, ex. `30` | Non définie |
+
+**Priorité :**
+
+1. `RAW_MEMORY_BACKFILL_FROM` (date ISO — priorité la plus haute ; les valeurs invalides sont ignorées avec une ligne de log)
+2. `RAW_MEMORY_BACKFILL_DAYS` (doit être `>= 0`)
+3. Minuit du dernier `.md` quotidien existant pour cet agent (1 jour de chevauchement par design)
+4. Historique complet (installations neuves)
+
+Remarques :
+
+- Le chevauchement d'un jour garantit que la fin du dernier jour sauvegardé n'est jamais perdue ; il peut produire des **doublons** dans le `.md` du jour (sans conséquence pour la recherche).
+- Ces variables n'ont aucun effet une fois que l'agent a un état SQLite, et ne sont pas utilisées en mode JSONL legacy.
 
 ## Configuration via openclaw.json
 
@@ -144,6 +167,16 @@ Définissez la variable d'environnement `TZ` si la détection de votre fuseau ho
 export TZ="Europe/Paris"
 openclaw gateway restart
 ```
+
+## Mode one-shot
+
+Pour une passe de sauvegarde unique (tests, ou exécution depuis cron), lancez le watcher avec `--once` — il effectue un seul cycle de scrutation puis quitte au lieu de rester résident :
+
+```bash
+node ~/.openclaw/plugins/openclaw-raw-memory-system/src/watcher.js --once
+```
+
+Ce flag ne s'applique qu'aux exécutions manuelles ; le watcher démarré par le Gateway n'est pas concerné.
 
 ## Exemples
 

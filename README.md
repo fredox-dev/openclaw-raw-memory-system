@@ -34,9 +34,9 @@ OpenClaw's built-in memory system is great — it compresses conversations into 
 OpenClaw Raw Memory System hooks into the Gateway and automatically backs up every agent conversation to human-readable Markdown files — **with zero token cost**.
 
 ```
-Agent talks → Gateway writes JSONL → This plugin reads JSONL → Daily .md files
-                                                                    ↓
-                                                            Searchable by agents
+Agent talks → Gateway stores SQLite or JSONL → Plugin reads it (read-only) → Daily .md files
+                                                                                   ↓
+                                                                           Searchable by agents
 ```
 
 ### What You Get
@@ -45,15 +45,19 @@ Agent talks → Gateway writes JSONL → This plugin reads JSONL → Daily .md f
 |---------|-------------|
 | 🔄 **Auto Backup** | Starts with Gateway, runs in background, stops automatically |
 | 📅 **Daily Files** | One clean `.md` file per agent per day |
+| 🗄️ **Dual Storage** | SQLite (OpenClaw >= 2026.8.1) or legacy JSONL — auto-detected per agent at runtime |
+| 🔒 **Read-Only Source** | Gateway databases opened strictly read-only — the plugin never writes to them |
 | 🔍 **Agent Search** | Agents can query raw conversations when memory is missing |
 | 💰 **Zero Token Cost** | Backup process never calls an LLM — pure file I/O |
 | 🌍 **Cross-Platform** | Windows, macOS, Linux |
 | 📖 **Human-Readable** | Open any file in any text editor — no binary databases |
-| ⚙️ **Zero Config** | Auto-detects timezone, agent names from `openclaw.json` |
+| ⚙️ **Zero Config** | Auto-detects timezone, agent names (`openclaw.json`) and storage mode |
 
 ---
 
 ## Quick Start
+
+**Requirements:** Node.js **>= 24** (native `node:sqlite` + zstd decompression) and OpenClaw **>= 2026.8.1** for SQLite session storage. On older OpenClaw versions, the watcher automatically falls back to legacy JSONL mode — no configuration needed.
 
 ### 1. Install the Plugin
 
@@ -96,6 +100,25 @@ That's it. The watcher starts automatically with the Gateway and backs up conver
 ---
 
 ## How It Works
+
+### Storage Backends
+
+The watcher reads both OpenClaw session storage formats and picks the right one **per agent at runtime** — by file presence, never by version number:
+
+| Mode | Source | Used when |
+|------|--------|-----------|
+| **SQLite** (priority) | `agents/<id>/agent/openclaw-agent.sqlite` (table `transcript_events`) | OpenClaw >= 2026.8.1 — events may be zstd-compressed, decompressed natively via `node:zlib` |
+| **Legacy JSONL** | `agents/<id>/sessions/*.jsonl` | Older OpenClaw versions |
+
+Databases are opened in **strict read-only** mode — the plugin never writes to gateway data.
+
+**First run (SQLite mode):** backup resumes from the last existing daily `.md` (with a 1-day overlap by design), or from full history on a fresh install. Override with `RAW_MEMORY_BACKFILL_FROM` (ISO date) or `RAW_MEMORY_BACKFILL_DAYS` (days back) — see [Configuration](docs/CONFIGURATION.md#first-run-backfill-sqlite-mode).
+
+**One-shot mode** (single poll cycle, useful for tests or cron):
+
+```bash
+node src/watcher.js --once
+```
 
 ### Backup Structure
 
@@ -163,6 +186,8 @@ All configuration is **optional**. The system auto-detects everything by default
 | `RAW_MEMORY_BACKUP_PATH` | Backup storage path | `~/.openclaw/raw-memory-backup` |
 | `RAW_MEMORY_POLL_INTERVAL` | Poll interval in milliseconds | `600000` (10 min) |
 | `TZ` | IANA timezone for date formatting | System timezone |
+| `RAW_MEMORY_BACKFILL_FROM` | ISO date to start backfill from (first SQLite run per agent) | Last daily `.md` file |
+| `RAW_MEMORY_BACKFILL_DAYS` | Days of history to backfill (first SQLite run per agent) | Last daily `.md` file |
 | `RAW_MEMORY_USER_LABEL` | Display name for user messages | Auto-detected or `"User"` |
 | `RAW_MEMORY_AGENT_MAIN` | Display name for `main` agent | Auto-detected |
 | `RAW_MEMORY_AGENT_PULSE` | Display name for `pulse` agent | Auto-detected |
@@ -205,7 +230,7 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full configuration gu
 
 - [Architecture](docs/ARCHITECTURE.md) — System design and data flow
 - [Configuration](docs/CONFIGURATION.md) — Full configuration reference
-- [Migration Guide](docs/MIGRATION.md) — Migrating from v1.x
+- [Migration Guide](docs/MIGRATION.md) — Migrating from v1.x and v2.x
 
 ---
 
@@ -214,6 +239,8 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full configuration gu
 This project is a fork of [openclaw-memory-system](https://github.com/oceanwh/openclaw-memory-system) by **[oceanwh](https://github.com/oceanwh)**, originally created under the MIT License.
 
 The v2.0 refactor was done by the [Xylem Team](https://github.com/xylem-team) to support the new OpenClaw plugin API (`register(api)` with `registerHook()`), remove all hardcoded values, and add full documentation.
+
+The v3.0 update adds dual SQLite/JSONL session storage support for OpenClaw >= 2026.8.1 (native `node:sqlite` + `node:zlib`, zero npm dependencies).
 
 All credit for the original concept and implementation goes to oceanwh. 🙏
 

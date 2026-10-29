@@ -6,6 +6,70 @@ English | <a href="MIGRATION_fr.md">Français</a>
 
 </div>
 
+## Migrating from v2.x to v3.0 (SQLite Storage)
+
+v3.0 adds support for OpenClaw's new SQLite session storage (OpenClaw >= 2026.8.1) while keeping full legacy JSONL compatibility.
+
+### What Changed
+
+| Aspect | v2.x | v3.0 |
+|--------|------|------|
+| Session storage read | JSONL only | **Dual: SQLite (priority) or JSONL** — detected per agent at runtime, by file presence |
+| SQLite source | — | `agents/<id>/agent/openclaw-agent.sqlite` (table `transcript_events`; zstd-compressed events decompressed natively) |
+| State file | `watcher-state-v2.json` | `watcher-state-v3.json` (auto-migrated from v2 — same format, offsets preserved) |
+| Node.js requirement | — | **Node >= 24** (native zstd; OpenClaw already requires Node 24.16+) |
+| npm dependencies | Zero | Zero (unchanged) — `node:sqlite` + `node:zlib` built-ins |
+| Backup `.md` format | Daily files | **Unchanged** — existing backups and the search skill stay valid |
+| New flag | — | `--once` (single poll cycle, for tests/cron) |
+| New env vars | — | `RAW_MEMORY_BACKFILL_FROM`, `RAW_MEMORY_BACKFILL_DAYS` |
+
+### Step-by-Step Migration
+
+#### 1. Check Node.js
+
+```bash
+node --version   # must be >= 24
+```
+
+#### 2. Update the Plugin
+
+```bash
+openclaw plugins update openclaw-raw-memory-system
+# or reinstall:
+openclaw plugins install git:github.com/fredox-dev/openclaw-raw-memory-system
+openclaw plugins enable openclaw-raw-memory-system
+```
+
+#### 3. Restart Gateway
+
+```bash
+openclaw gateway restart
+```
+
+#### 4. Verify
+
+```bash
+# Backups continue to appear
+ls ~/.openclaw/raw-memory-backup/
+
+# The state file is migrated automatically
+cat ~/.openclaw/raw-memory-backup/watcher-state-v3.json
+```
+
+### What Happens Automatically
+
+- **Storage detection** — each agent is checked for `agent/openclaw-agent.sqlite`; if present, SQLite mode is used, otherwise legacy JSONL. On OpenClaw < 2026.8.1 nothing changes: JSONL mode continues as before.
+- **State migration** — `watcher-state-v2.json` is renamed to `watcher-state-v3.json` on first start. Same format: your existing JSONL offsets are preserved.
+- **First SQLite run** — for each agent, backup resumes from the last existing daily `.md` (1-day overlap by design; duplicate entries on that day are possible and harmless). Override with `RAW_MEMORY_BACKFILL_FROM` / `RAW_MEMORY_BACKFILL_DAYS`.
+- **Safety** — gateway databases are opened strictly read-only; the plugin never writes to them.
+
+### Breaking Changes
+
+- **Node.js >= 24 is required** (`engines: ">=24.0.0"` in `package.json`).
+- None for output: the `.md` backup format, directory layout, and search skill are unchanged. Existing backups remain valid and searchable.
+
+---
+
 ## Migrating from v1 (`openclaw-raw-memory`) to v2 (`openclaw-raw-memory-system`)
 
 ### What Changed

@@ -34,9 +34,9 @@ Le système de mémoire intégré d'OpenClaw est excellent — il compresse les 
 OpenClaw Raw Memory System se branche sur le Gateway et sauvegarde automatiquement chaque conversation d'agent dans des fichiers Markdown lisibles par l'humain — **sans aucun coût en tokens**.
 
 ```
-L'agent parle → Le Gateway écrit en JSONL → Ce plugin lit le JSONL → Fichiers .md quotidiens
-                                                                          ↓
-                                                                  Consultables par les agents
+L'agent parle → Le Gateway stocke en SQLite ou JSONL → Le plugin lit (lecture seule) → Fichiers .md quotidiens
+                                                                                                  ↓
+                                                                                          Consultables par les agents
 ```
 
 ### Ce que vous obtenez
@@ -45,15 +45,19 @@ L'agent parle → Le Gateway écrit en JSONL → Ce plugin lit le JSONL → Fich
 |---------|-------------|
 | 🔄 **Sauvegarde auto** | Démarre avec le Gateway, tourne en arrière-plan, s'arrête automatiquement |
 | 📅 **Fichiers quotidiens** | Un fichier `.md` clair par agent et par jour |
+| 🗄️ **Double stockage** | SQLite (OpenClaw >= 2026.8.1) ou JSONL legacy — détection automatique par agent au runtime |
+| 🔒 **Source en lecture seule** | Bases du gateway ouvertes en lecture seule stricte — le plugin n'écrit jamais dedans |
 | 🔍 **Recherche par agent** | Les agents peuvent interroger les conversations brutes quand la mémoire leur fait défaut |
 | 💰 **Coût en tokens nul** | Le processus de sauvegarde n'appelle jamais de LLM — pur fichier I/O |
 | 🌍 **Multiplateforme** | Windows, macOS, Linux |
 | 📖 **Lisible par l'humain** | Ouvrez n'importe quel fichier dans n'importe quel éditeur de texte — pas de base de données binaire |
-| ⚙️ **Zéro configuration** | Détection automatique du fuseau horaire, des noms d'agents depuis `openclaw.json` |
+| ⚙️ **Zéro configuration** | Détection automatique du fuseau horaire, des noms d'agents (`openclaw.json`) et du mode de stockage |
 
 ---
 
 ## Démarrage rapide
+
+**Prérequis :** Node.js **>= 24** (`node:sqlite` natif + décompression zstd) et OpenClaw **>= 2026.8.1** pour le stockage SQLite des sessions. Sur les versions antérieures d'OpenClaw, le watcher bascule automatiquement en mode JSONL legacy — aucune configuration nécessaire.
 
 ### 1. Installer le plugin
 
@@ -96,6 +100,25 @@ C'est tout. Le watcher démarre automatiquement avec le Gateway et sauvegarde le
 ---
 
 ## Comment ça marche
+
+### Backends de stockage
+
+Le watcher lit les deux formats de stockage de sessions OpenClaw et choisit le bon **par agent au runtime** — par présence des fichiers, jamais par numéro de version :
+
+| Mode | Source | Utilisé quand |
+|------|--------|---------------|
+| **SQLite** (priorité) | `agents/<id>/agent/openclaw-agent.sqlite` (table `transcript_events`) | OpenClaw >= 2026.8.1 — événements éventuellement compressés en zstd, décompressés nativement via `node:zlib` |
+| **JSONL legacy** | `agents/<id>/sessions/*.jsonl` | Versions antérieures d'OpenClaw |
+
+Les bases de données sont ouvertes en **lecture seule stricte** — le plugin n'écrit jamais dans les données du gateway.
+
+**Premier run (mode SQLite) :** la sauvegarde reprend depuis le dernier `.md` quotidien existant (avec 1 jour de chevauchement par design), ou depuis l'historique complet sur une installation neuve. Surcharge possible avec `RAW_MEMORY_BACKFILL_FROM` (date ISO) ou `RAW_MEMORY_BACKFILL_DAYS` (jours en arrière) — voir [Configuration](docs/CONFIGURATION_fr.md#backfill-au-premier-run-mode-sqlite).
+
+**Mode one-shot** (un seul cycle de scrutation, utile pour les tests ou cron) :
+
+```bash
+node src/watcher.js --once
+```
 
 ### Structure des sauvegardes
 
@@ -163,6 +186,8 @@ Toute la configuration est **optionnelle**. Le système détecte tout automatiqu
 | `RAW_MEMORY_BACKUP_PATH` | Chemin de stockage des sauvegardes | `~/.openclaw/raw-memory-backup` |
 | `RAW_MEMORY_POLL_INTERVAL` | Intervalle de scrutation en millisecondes | `600000` (10 min) |
 | `TZ` | Fuseau horaire IANA pour le formatage des dates | Fuseau horaire système |
+| `RAW_MEMORY_BACKFILL_FROM` | Date ISO de départ du backfill (premier run SQLite par agent) | Dernier fichier `.md` quotidien |
+| `RAW_MEMORY_BACKFILL_DAYS` | Jours d'historique à sauvegarder (premier run SQLite par agent) | Dernier fichier `.md` quotidien |
 | `RAW_MEMORY_USER_LABEL` | Nom d'affichage pour les messages utilisateur | Auto-détecté ou `"User"` |
 | `RAW_MEMORY_AGENT_MAIN` | Nom d'affichage pour l'agent `main` | Auto-détecté |
 | `RAW_MEMORY_AGENT_PULSE` | Nom d'affichage pour l'agent `pulse` | Auto-détecté |
@@ -205,7 +230,7 @@ Voir [docs/CONFIGURATION_fr.md](docs/CONFIGURATION_fr.md) pour le guide de confi
 
 - [Architecture](docs/ARCHITECTURE_fr.md) — Conception du système et flux de données
 - [Configuration](docs/CONFIGURATION_fr.md) — Guide de configuration complet
-- [Guide de migration](docs/MIGRATION_fr.md) — Migrer depuis la v1.x
+- [Guide de migration](docs/MIGRATION_fr.md) — Migrer depuis la v1.x et la v2.x
 
 ---
 
@@ -214,6 +239,8 @@ Voir [docs/CONFIGURATION_fr.md](docs/CONFIGURATION_fr.md) pour le guide de confi
 Ce projet est un fork de [openclaw-memory-system](https://github.com/oceanwh/openclaw-memory-system) créé par **[oceanwh](https://github.com/oceanwh)**, à l'origine sous licence MIT.
 
 Le refactor v2.0 a été réalisé par la [Xylem Team](https://github.com/xylem-team) pour supporter la nouvelle API de plugin OpenClaw (`register(api)` avec `registerHook()`), supprimer toutes les valeurs codées en dur et ajouter une documentation complète.
+
+La mise à jour v3.0 ajoute le double stockage de sessions SQLite/JSONL pour OpenClaw >= 2026.8.1 (`node:sqlite` + `node:zlib` natifs, zéro dépendance npm).
 
 Tout le mérite du concept et de l'implémentation originaux revient à oceanwh. 🙏
 

@@ -6,6 +6,70 @@
 
 </div>
 
+## Migration de v2.x vers v3.0 (stockage SQLite)
+
+La v3.0 ajoute le support du nouveau stockage SQLite des sessions OpenClaw (OpenClaw >= 2026.8.1) tout en gardant une compatibilité complète avec le JSONL legacy.
+
+### Ce qui a changé
+
+| Aspect | v2.x | v3.0 |
+|--------|------|------|
+| Stockage de sessions lu | JSONL uniquement | **Double : SQLite (priorité) ou JSONL** — détection par agent au runtime, par présence des fichiers |
+| Source SQLite | — | `agents/<id>/agent/openclaw-agent.sqlite` (table `transcript_events` ; événements compressés en zstd décompressés nativement) |
+| Fichier d'état | `watcher-state-v2.json` | `watcher-state-v3.json` (migré automatiquement depuis v2 — même format, offsets préservés) |
+| Version de Node.js | — | **Node >= 24** (zstd natif ; OpenClaw exige de toute façon Node 24.16+) |
+| Dépendances npm | Zéro | Zéro (inchangé) — built-ins `node:sqlite` + `node:zlib` |
+| Format `.md` des sauvegardes | Fichiers quotidiens | **Inchangé** — les sauvegardes existantes et le skill de recherche restent valides |
+| Nouveau flag | — | `--once` (un seul cycle de scrutation, pour tests/cron) |
+| Nouvelles variables d'environnement | — | `RAW_MEMORY_BACKFILL_FROM`, `RAW_MEMORY_BACKFILL_DAYS` |
+
+### Migration étape par étape
+
+#### 1. Vérifier Node.js
+
+```bash
+node --version   # doit être >= 24
+```
+
+#### 2. Mettre à jour le plugin
+
+```bash
+openclaw plugins update openclaw-raw-memory-system
+# ou réinstaller :
+openclaw plugins install git:github.com/fredox-dev/openclaw-raw-memory-system
+openclaw plugins enable openclaw-raw-memory-system
+```
+
+#### 3. Redémarrer le Gateway
+
+```bash
+openclaw gateway restart
+```
+
+#### 4. Vérifier
+
+```bash
+# Les sauvegardes continuent d'apparaître
+ls ~/.openclaw/raw-memory-backup/
+
+# Le fichier d'état est migré automatiquement
+cat ~/.openclaw/raw-memory-backup/watcher-state-v3.json
+```
+
+### Ce qui se passe automatiquement
+
+- **Détection du stockage** — chaque agent est testé pour `agent/openclaw-agent.sqlite` ; si la base existe, le mode SQLite est utilisé, sinon JSONL legacy. Sur OpenClaw < 2026.8.1 rien ne change : le mode JSONL continue comme avant.
+- **Migration de l'état** — `watcher-state-v2.json` est renommé en `watcher-state-v3.json` au premier démarrage. Même format : vos offsets JSONL existants sont préservés.
+- **Premier run SQLite** — pour chaque agent, la sauvegarde reprend depuis le dernier `.md` quotidien existant (1 jour de chevauchement par design ; des doublons dans le fichier du jour sont possibles et sans conséquence). Surcharge avec `RAW_MEMORY_BACKFILL_FROM` / `RAW_MEMORY_BACKFILL_DAYS`.
+- **Sécurité** — les bases du gateway sont ouvertes strictement en lecture seule ; le plugin n'écrit jamais dedans.
+
+### Changements cassants
+
+- **Node.js >= 24 est requis** (`engines: ">=24.0.0"` dans `package.json`).
+- Aucun sur la sortie : le format `.md` des sauvegardes, l'arborescence et le skill de recherche sont inchangés. Les sauvegardes existantes restent valides et consultables.
+
+---
+
 ## Migration de v1 (`openclaw-raw-memory`) vers v2 (`openclaw-raw-memory-system`)
 
 ### Ce qui a changé

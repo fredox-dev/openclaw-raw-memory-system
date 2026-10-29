@@ -10,6 +10,8 @@ English | <a href="CONFIGURATION_fr.md">Français</a>
 
 All configuration is **optional**. The plugin works out of the box with sensible defaults and auto-detects as much as possible.
 
+**Requirements:** Node.js **>= 24** (see `engines` in `package.json`). SQLite mode relies on the built-in `node:sqlite` module and native zstd decompression (`node:zlib`) — zero npm dependencies.
+
 ## Configuration Priority
 
 All values follow the same 3-tier priority:
@@ -50,6 +52,27 @@ All values follow the same 3-tier priority:
 | `OPENCLAW_BASE` | OpenClaw base directory | `~/.openclaw` |
 | `OPENCLAW_AGENTS_DIR` | Directory containing agent sessions | `~/.openclaw/agents` |
 | `OPENCLAW_WORKSPACE_BASE` | OpenClaw workspace root (used by search tool) | `~/.openclaw` |
+
+### First-Run Backfill (SQLite Mode)
+
+These variables control how far back the watcher collects history the **first time** it processes an agent in SQLite mode (i.e. no state exists yet for that agent). They are read at each poll and apply per agent.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `RAW_MEMORY_BACKFILL_FROM` | ISO date/time to start collecting from, e.g. `2026-08-01` or `2026-08-01T00:00:00Z` | Not set |
+| `RAW_MEMORY_BACKFILL_DAYS` | Days of history to collect, counted back from now, e.g. `30` | Not set |
+
+**Priority:**
+
+1. `RAW_MEMORY_BACKFILL_FROM` (ISO date — highest priority; invalid values are ignored with a log line)
+2. `RAW_MEMORY_BACKFILL_DAYS` (must be `>= 0`)
+3. Midnight of the last existing daily `.md` for that agent (1-day overlap by design)
+4. Full history (fresh installs)
+
+Notes:
+
+- The 1-day overlap guarantees the tail of the last backed-up day is never lost; it may produce **duplicate entries** in that day's `.md` file (harmless for search).
+- These variables have no effect once an agent has SQLite state, and are not used in legacy JSONL mode.
 
 ## openclaw.json Configuration
 
@@ -144,6 +167,16 @@ Set the `TZ` environment variable if your system timezone detection doesn't work
 export TZ="Europe/Paris"
 openclaw gateway restart
 ```
+
+## One-Shot Mode
+
+For a single backup pass (testing, or running from cron), start the watcher with `--once` — it performs one poll cycle and exits instead of staying resident:
+
+```bash
+node ~/.openclaw/plugins/openclaw-raw-memory-system/src/watcher.js --once
+```
+
+The flag only applies to manual runs; the watcher started by the Gateway is unaffected.
 
 ## Examples
 
